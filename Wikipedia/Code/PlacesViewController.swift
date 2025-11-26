@@ -2087,6 +2087,26 @@ class PlacesViewController: ArticleLocationCollectionViewController, UISearchBar
         let searchResult = MWKSearchResult(articleID: 0, revID: 0, title: title, displayTitle: displayTitle, displayTitleHTML: displayTitleHTML, wikidataDescription: article.wikidataDescription, extract: article.snippet, thumbnailURL: article.thumbnailURL, index: nil, titleNamespace: nil, location: article.location)
         currentSearch = PlaceSearch(filter: .top, type: .location, origin: .user, sortStyle: .links, string: nil, region: region, localizedDescription: title, searchResult: searchResult, siteURL: articleURL.wmf_site)
     }
+    
+    @objc(showLocationWithLatitude:longitude:)
+    public func showLocation(latitude: Double, longitude: Double) {
+        guard view != nil else { // force view instantiation
+            return
+        }
+        
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let span = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        let region = MKCoordinateRegion(center: coordinate, span: span)
+        
+        // Update view mode to map if needed
+        updateViewModeToMap()
+        
+        // Set the map region which will trigger search
+        mapRegion = region
+        
+        // Perform default search for the specified region
+        performDefaultSearch(withRegion: region)
+    }
 
     fileprivate func searchForFirstSearchSuggestion() {
         if !searchSuggestionController.searches[PlaceSearchSuggestionController.completionSection].isEmpty {
