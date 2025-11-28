@@ -68,7 +68,6 @@ static BOOL WMFIsValidLongitude(double longitude) {
 }
 
 + (instancetype)wmf_placesActivityWithURL:(NSURL *)activityURL {
-    // Safe fallback: return valid activity even if URL is malformed
     if (!activityURL) {
         return [self wmf_pageActivityWithName:@"Places"];
     }
@@ -82,6 +81,9 @@ static BOOL WMFIsValidLongitude(double longitude) {
     NSNumber *latitude = nil;
     NSNumber *longitude = nil;
     
+    NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
+    formatter.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
+    
     for (NSURLQueryItem *item in components.queryItems) {
         if ([item.name isEqualToString:@"WMFArticleURL"]) {
             NSString *articleURLString = item.value;
@@ -89,18 +91,14 @@ static BOOL WMFIsValidLongitude(double longitude) {
                 articleURL = [NSURL URLWithString:articleURLString];
             }
         } else if ([item.name isEqualToString:@"lat"]) {
-            if (item.value) {
-                double latValue = [item.value doubleValue];
-                if (WMFIsValidLatitude(latValue)) {
-                    latitude = @(latValue);
-                }
+            NSNumber *num = [formatter numberFromString:item.value];
+            if (num && WMFIsValidLatitude(num.doubleValue)) {
+                latitude = num;
             }
         } else if ([item.name isEqualToString:@"lon"]) {
-            if (item.value) {
-                double lonValue = [item.value doubleValue];
-                if (WMFIsValidLongitude(lonValue)) {
-                    longitude = @(lonValue);
-                }
+            NSNumber *num = [formatter numberFromString:item.value];
+            if (num && WMFIsValidLongitude(num.doubleValue)) {
+                longitude = num;
             }
         }
     }
@@ -108,7 +106,7 @@ static BOOL WMFIsValidLongitude(double longitude) {
     NSUserActivity *activity = [self wmf_pageActivityWithName:@"Places"];
     activity.webpageURL = articleURL;
     
-    if (latitude != nil && longitude != nil) {
+    if (latitude && longitude) {
         NSMutableDictionary *userInfo = [activity.userInfo mutableCopy] ?: [NSMutableDictionary dictionary];
         userInfo[@"WMFPlacesLatitude"] = latitude;
         userInfo[@"WMFPlacesLongitude"] = longitude;
