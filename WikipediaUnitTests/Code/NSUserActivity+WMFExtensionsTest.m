@@ -111,4 +111,27 @@
     XCTAssertNotNil(activity2.userInfo[@"WMFPlacesLongitude"]);
 }
 
+- (void)testPlacesActivityWithMissingParameters {
+    NSURL *url = [NSURL URLWithString:@"wikipedia://places"];
+    NSUserActivity *activity = [NSUserActivity wmf_placesActivityWithURL:url];
+    
+    XCTAssertNotNil(activity);
+    NSNumber *lat = activity.userInfo[@"WMFPlacesLatitude"];
+    NSNumber *lon = activity.userInfo[@"WMFPlacesLongitude"];
+    
+    XCTAssertNil(lat);
+    XCTAssertNil(lon);
+}
+
+- (void)testPlacesActivityWithNilURL {
+    NSUserActivity *activity = [NSUserActivity wmf_placesActivityWithURL:nil];
+    XCTAssertNotNil(activity);
+}
+
+- (void)testUnknownDeepLinkType {
+    NSURL *url = [NSURL URLWithString:@"wikipedia://unknown"];
+    NSUserActivity *activity = [NSUserActivity wmf_activityForWikipediaScheme:url];
+    XCTAssertNil(activity);
+}
+
 @end

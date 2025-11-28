@@ -68,7 +68,16 @@ static BOOL WMFIsValidLongitude(double longitude) {
 }
 
 + (instancetype)wmf_placesActivityWithURL:(NSURL *)activityURL {
+    // Safe fallback: return valid activity even if URL is malformed
+    if (!activityURL) {
+        return [self wmf_pageActivityWithName:@"Places"];
+    }
+    
     NSURLComponents *components = [NSURLComponents componentsWithURL:activityURL resolvingAgainstBaseURL:NO];
+    if (!components) {
+        return [self wmf_pageActivityWithName:@"Places"];
+    }
+    
     NSURL *articleURL = nil;
     NSNumber *latitude = nil;
     NSNumber *longitude = nil;
@@ -76,16 +85,22 @@ static BOOL WMFIsValidLongitude(double longitude) {
     for (NSURLQueryItem *item in components.queryItems) {
         if ([item.name isEqualToString:@"WMFArticleURL"]) {
             NSString *articleURLString = item.value;
-            articleURL = [NSURL URLWithString:articleURLString];
+            if (articleURLString) {
+                articleURL = [NSURL URLWithString:articleURLString];
+            }
         } else if ([item.name isEqualToString:@"lat"]) {
-            double latValue = [item.value doubleValue];
-            if (WMFIsValidLatitude(latValue)) {
-                latitude = @(latValue);
+            if (item.value) {
+                double latValue = [item.value doubleValue];
+                if (WMFIsValidLatitude(latValue)) {
+                    latitude = @(latValue);
+                }
             }
         } else if ([item.name isEqualToString:@"lon"]) {
-            double lonValue = [item.value doubleValue];
-            if (WMFIsValidLongitude(lonValue)) {
-                longitude = @(lonValue);
+            if (item.value) {
+                double lonValue = [item.value doubleValue];
+                if (WMFIsValidLongitude(lonValue)) {
+                    longitude = @(lonValue);
+                }
             }
         }
     }
