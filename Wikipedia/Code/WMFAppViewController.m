@@ -1312,19 +1312,25 @@ NSString *const WMFLanguageVariantAlertsLibraryVersion = @"WMFLanguageVariantAle
             [self setSelectedIndex:WMFAppTabTypePlaces];
             [self.currentTabNavigationController popToRootViewControllerAnimated:animated];
             
-            // Check for coordinates first (lat/lon)
             NSDictionary *userInfo = activity.userInfo;
             NSNumber *latitude = userInfo[@"WMFPlacesLatitude"];
             NSNumber *longitude = userInfo[@"WMFPlacesLongitude"];
             
+            BOOL coordinatesValid = NO;
             if (latitude != nil && longitude != nil) {
-                // Show location from coordinates
-                [[self placesViewController] showLocationWithLatitude:latitude.doubleValue longitude:longitude.doubleValue];
-            } else {
-                // Fall back to article URL if provided
+                double lat = latitude.doubleValue;
+                double lon = longitude.doubleValue;
+                
+                // Validate coordinates before showing
+                if (lat >= -90.0 && lat <= 90.0 && lon >= -180.0 && lon <= 180.0) {
+                    [[self placesViewController] showLocationWithLatitude:lat longitude:lon];
+                    coordinatesValid = YES;
+                }
+            }
+
+            if (!coordinatesValid) {
                 NSURL *articleURL = activity.wmf_linkURL;
                 if (articleURL) {
-                    // For "View on a map" action to succeed, view mode has to be set to map.
                     [[self placesViewController] updateViewModeToMap];
                     [[self placesViewController] showArticleURL:articleURL];
                 }

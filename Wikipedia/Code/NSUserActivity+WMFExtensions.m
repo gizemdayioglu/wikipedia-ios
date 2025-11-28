@@ -59,6 +59,14 @@ __attribute__((annotate("returns_localized_nsstring"))) static inline NSString *
     return activity;
 }
 
+static BOOL WMFIsValidLatitude(double latitude) {
+    return latitude >= -90.0 && latitude <= 90.0;
+}
+
+static BOOL WMFIsValidLongitude(double longitude) {
+    return longitude >= -180.0 && longitude <= 180.0;
+}
+
 + (instancetype)wmf_placesActivityWithURL:(NSURL *)activityURL {
     NSURLComponents *components = [NSURLComponents componentsWithURL:activityURL resolvingAgainstBaseURL:NO];
     NSURL *articleURL = nil;
@@ -70,16 +78,21 @@ __attribute__((annotate("returns_localized_nsstring"))) static inline NSString *
             NSString *articleURLString = item.value;
             articleURL = [NSURL URLWithString:articleURLString];
         } else if ([item.name isEqualToString:@"lat"]) {
-            latitude = @([item.value doubleValue]);
+            double latValue = [item.value doubleValue];
+            if (WMFIsValidLatitude(latValue)) {
+                latitude = @(latValue);
+            }
         } else if ([item.name isEqualToString:@"lon"]) {
-            longitude = @([item.value doubleValue]);
+            double lonValue = [item.value doubleValue];
+            if (WMFIsValidLongitude(lonValue)) {
+                longitude = @(lonValue);
+            }
         }
     }
     
     NSUserActivity *activity = [self wmf_pageActivityWithName:@"Places"];
     activity.webpageURL = articleURL;
     
-    // Store coordinates in userInfo if provided
     if (latitude != nil && longitude != nil) {
         NSMutableDictionary *userInfo = [activity.userInfo mutableCopy] ?: [NSMutableDictionary dictionary];
         userInfo[@"WMFPlacesLatitude"] = latitude;

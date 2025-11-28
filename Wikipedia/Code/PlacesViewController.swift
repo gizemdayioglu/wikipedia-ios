@@ -2088,23 +2088,51 @@ class PlacesViewController: ArticleLocationCollectionViewController, UISearchBar
         currentSearch = PlaceSearch(filter: .top, type: .location, origin: .user, sortStyle: .links, string: nil, region: region, localizedDescription: title, searchResult: searchResult, siteURL: articleURL.wmf_site)
     }
     
+    /**
+     * Shows a location on the map using latitude and longitude coordinates.
+     *
+     * - Parameter latitude: Latitude in degrees (-90 to 90)
+     * - Parameter longitude: Longitude in degrees (-180 to 180)
+     *
+     * - Note: Invalid coordinates are rejected and logged. The method returns early
+     *   if coordinates are out of valid range or not finite.
+     *
+     * - Important: This method updates the view mode to map and performs a search
+     *   for places in the specified region.
+     */
     @objc(showLocationWithLatitude:longitude:)
     public func showLocation(latitude: Double, longitude: Double) {
-        guard view != nil else { // force view instantiation
+        guard latitude.isFinite && longitude.isFinite else {
+            DDLogError("Invalid coordinates: lat=\(latitude), lon=\(longitude)")
+            return
+        }
+        
+        guard latitude >= -90.0 && latitude <= 90.0 else {
+            DDLogError("Latitude out of range: \(latitude). Must be between -90 and 90.")
+            return
+        }
+        
+        guard longitude >= -180.0 && longitude <= 180.0 else {
+            DDLogError("Longitude out of range: \(longitude). Must be between -180 and 180.")
+            return
+        }
+        
+        guard view != nil else {
             return
         }
         
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        
+        guard CLLocationCoordinate2DIsValid(coordinate) else {
+            DDLogError("Invalid CLLocationCoordinate2D created from lat=\(latitude), lon=\(longitude)")
+            return
+        }
+        
         let span = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
         let region = MKCoordinateRegion(center: coordinate, span: span)
         
-        // Update view mode to map if needed
         updateViewModeToMap()
-        
-        // Set the map region which will trigger search
         mapRegion = region
-        
-        // Perform default search for the specified region
         performDefaultSearch(withRegion: region)
     }
 
